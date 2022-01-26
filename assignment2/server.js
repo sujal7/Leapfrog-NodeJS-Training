@@ -1,7 +1,6 @@
 const express = require('express');
 const app = express();
 const router = express.Router();
-const path = require('path');
 const port = process.env.PORT || 3000;
 const fs = require('fs');
 
@@ -42,34 +41,48 @@ router.delete('/todo/:title', (req, res) => {
 
   // Runs if the title is present in the json file.
   if (index !== -1) {
-    console.log('running');
     data.splice(index, 1);
     const newData = JSON.stringify(data);
     fs.writeFile('data.json', newData, (err) => {
       if (err) throw err;
       console.log('Data deleted');
     });
+    res.status(200).send(data);
+  } else {
+    res.status(500).send('Error');
   }
-  res.status(200).send(data);
 });
 
 // Handles PUT Request
-router.put('/todo', (req, res) => {
+router.put('/todo/:title', (req, res) => {
   let data = fs.readFileSync('data.json');
   data = JSON.parse(data);
-  let index = data.findIndex((i) => i.title === req.body.title);
+  const title = req.params.title;
+  // let index = data.findIndex((i) => i.title === title);
+
+  let indexArray = [];
+  // Stores all the index where the title is present.
+  for (let i = 0; i < data.length; i++) {
+    if (data[i].title === title) {
+      indexArray.push(i);
+    }
+  }
 
   // Runs if the title is present in the json file.
-  if (index !== -1) {
-    data[index].description = req.body.description;
-    data[index].status = req.body.status;
+  if (indexArray.length !== 0) {
+    for (let index of indexArray) {
+      data[index].description = req.body.description;
+      data[index].status = req.body.status;
+    }
     const newData = JSON.stringify(data);
     fs.writeFile('data.json', newData, (err) => {
       if (err) throw err;
       console.log('Data updated');
     });
+    res.status(200).send(data);
+  } else {
+    res.status(500).send('Error');
   }
-  res.status(200).send(data);
 });
 
 app.use('/', router);
